@@ -55,6 +55,15 @@
 #include "rtc_base/trace_event.h"
 #include "rtc_base/weak_ptr.h"
 
+// Declared in Chromium's base/record_replay.h, which WebRTC's own build can't
+// include. Chromium is recording or replaying its own run when the first says
+// so, and then some values have to be the ones the recording has.
+namespace recordreplay {
+bool IsRecordingOrReplaying(const char* feature, const char* subfeature);
+uintptr_t RecordReplayValue(const char* why, uintptr_t v);
+void RecordReplayBytes(const char* why, void* buf, size_t size);
+}  // namespace recordreplay
+
 namespace webrtc {
 namespace {
 
@@ -913,7 +922,12 @@ std::string Port::ToString() const {
   StringBuilder ss;
   // Fits the typical description without reallocations.
   ss.Reserve(128);
-  ss << "Port[" << ToHex(reinterpret_cast<uintptr_t>(this)) << ":"
+  // The address is in what's logged and compared, and differs when replaying.
+  uintptr_t id = reinterpret_cast<uintptr_t>(this);
+  if (recordreplay::IsRecordingOrReplaying(nullptr, nullptr)) {
+    id = recordreplay::RecordReplayValue("cricket/Port address", id);
+  }
+  ss << "Port[" << ToHex(id) << ":"
      << content_name_ << ":" << component_ << ":" << generation_ << ":"
      << IceCandidateTypeToString(type_) << ":" << *network_ << "]";
   return ss.Release();

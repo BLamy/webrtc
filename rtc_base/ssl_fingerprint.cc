@@ -29,6 +29,14 @@
 #include "rtc_base/ssl_identity.h"
 #include "rtc_base/string_encode.h"
 
+// Declared in Chromium's base/record_replay.h, which WebRTC's own build can't
+// include. Chromium is recording or replaying its own run when the first says
+// so, and then some values have to be the ones the recording has.
+namespace recordreplay {
+bool IsRecordingOrReplaying(const char* feature, const char* subfeature);
+void RecordReplayBytes(const char* why, void* buf, size_t size);
+}  // namespace recordreplay
+
 namespace webrtc {
 
 std::unique_ptr<SSLFingerprint> SSLFingerprint::Create(
@@ -44,6 +52,12 @@ std::unique_ptr<SSLFingerprint> SSLFingerprint::Create(
   bool ret = cert.ComputeDigest(algorithm, digest);
   if (!ret) {
     return nullptr;
+  }
+  // What the crypto library computes can differ when replaying, and the
+  // fingerprint goes into what the page is told.
+  if (recordreplay::IsRecordingOrReplaying(nullptr, nullptr)) {
+    recordreplay::RecordReplayBytes("SSLFingerprint::Create", digest.data(),
+                                    digest.size());
   }
   return std::make_unique<SSLFingerprint>(algorithm, digest);
 }
