@@ -48,6 +48,7 @@
 #include "rtc_base/network.h"
 #include "rtc_base/network/received_packet.h"
 #include "rtc_base/network/sent_packet.h"
+#include "rtc_base/record_replay.h"
 #include "rtc_base/socket_address.h"
 #include "rtc_base/string_encode.h"
 #include "rtc_base/string_utils.h"
@@ -58,11 +59,6 @@
 // Declared in Chromium's base/record_replay.h, which WebRTC's own build can't
 // include. Chromium is recording or replaying its own run when the first says
 // so, and then some values have to be the ones the recording has.
-namespace recordreplay {
-bool IsRecordingOrReplaying(const char* feature, const char* subfeature);
-uintptr_t RecordReplayValue(const char* why, uintptr_t v);
-void RecordReplayBytes(const char* why, void* buf, size_t size);
-}  // namespace recordreplay
 
 namespace webrtc {
 namespace {
@@ -268,6 +264,7 @@ void Port::AddAddress(const SocketAddress& address,
   c.set_underlying_type_for_vpn(network_->underlying_type_for_vpn());
   c.set_url(url);
   c.set_related_address(related_address);
+  recordreplay::Assert("Port::AddAddress %d", c.address().IsAnyIP());
   c.set_network_slice(network_->network_slice());
 
   bool pending = MaybeObfuscateAddress(c, is_final);
@@ -278,6 +275,8 @@ void Port::AddAddress(const SocketAddress& address,
 }
 
 bool Port::MaybeObfuscateAddress(const Candidate& c, bool is_final) {
+  recordreplay::Assert("Port::MaybeObfuscateAddress #1 %d",
+                       c.address().IsAnyIP());
   // TODO(bugs.webrtc.org/9723): Use a config to control the feature of IP
   // handling with mDNS.
   if (network_->GetMdnsResponder() == nullptr) {
@@ -304,6 +303,8 @@ bool Port::MaybeObfuscateAddress(const Candidate& c, bool is_final) {
       RTC_DCHECK_RUN_ON(weak_ptr->thread_);
       weak_ptr->set_mdns_name_registration_status(
           MdnsNameRegistrationStatus::kCompleted);
+      recordreplay::Assert("Port::MaybeObfuscateAddress #2 %d",
+                           copy.address().IsAnyIP());
       weak_ptr->FinishAddingAddress(copy, is_final);
     }
   };
@@ -314,6 +315,7 @@ bool Port::MaybeObfuscateAddress(const Candidate& c, bool is_final) {
 }
 
 void Port::FinishAddingAddress(const Candidate& c, bool is_final) {
+  recordreplay::Assert("Port::FinishAddingAddress %d", c.address().IsAnyIP());
   candidates_.push_back(c);
   NotifyCandidateReady(this, c);
 

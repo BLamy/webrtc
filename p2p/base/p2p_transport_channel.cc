@@ -71,6 +71,7 @@
 #include "rtc_base/network/sent_packet.h"
 #include "rtc_base/network_constants.h"
 #include "rtc_base/network_route.h"
+#include "rtc_base/record_replay.h"
 #include "rtc_base/socket.h"
 #include "rtc_base/socket_address.h"
 #include "rtc_base/task_utils/repeating_task.h"
@@ -947,9 +948,11 @@ void P2PTransportChannel::OnCandidatesReady(
     PortAllocatorSession* /* session */,
     const std::vector<Candidate>& candidates) {
   RTC_DCHECK_RUN_ON(&network_thread_);
+  recordreplay::Assert("P2PTransportChannel::OnCandidatesReady Start %lu", candidates.size());
   for (size_t i = 0; i < candidates.size(); ++i) {
     NotifyCandidateGathered(this, candidates[i]);
   }
+  recordreplay::Assert("P2PTransportChannel::OnCandidatesReady Done");
 }
 
 void P2PTransportChannel::OnCandidateError(

@@ -106,6 +106,7 @@
 #include "rtc_base/crypto_random.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/operations_chain.h"
+#include "rtc_base/record_replay.h"
 #include "rtc_base/rtc_certificate.h"
 #include "rtc_base/rtc_certificate_generator.h"
 #include "rtc_base/ssl_stream_adapter.h"
@@ -1819,6 +1820,8 @@ SdpOfferAnswerHandler::SdpOfferAnswerHandler(const Environment& env,
       }()),
       pt_suggester_(pc_->configuration()->bundle_policy, env_),
       weak_ptr_factory_(this) {
+  recordreplay::Assert("SdpOfferAnswerHandler %s",
+                       pc->session_id().c_str());
   operations_chain_->SetOnChainEmptyCallback(
       [this_weak_ptr = weak_ptr_factory_.GetWeakPtr()]() {
         if (!this_weak_ptr)

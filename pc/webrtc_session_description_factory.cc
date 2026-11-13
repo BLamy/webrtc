@@ -38,6 +38,7 @@
 #include "pc/session_description.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/record_replay.h"
 #include "rtc_base/rtc_certificate.h"
 #include "rtc_base/rtc_certificate_generator.h"
 #include "rtc_base/ssl_identity.h"
@@ -132,6 +133,7 @@ WebRtcSessionDescriptionFactory::WebRtcSessionDescriptionFactory(
       session_id_(session_id),
       env_(env),
       certificate_request_state_(CERTIFICATE_NOT_NEEDED) {
+  recordreplay::Assert("WebRtcSessionDescriptionFactory %s", session_id.c_str());
   RTC_DCHECK(signaling_thread_);
 
   if (!dtls_enabled) {
@@ -306,6 +308,8 @@ void WebRtcSessionDescriptionFactory::InternalCreateOffer(
   // is created regardless if it's identical to the previous one or not.
   // The `session_version_` is a uint64_t, the wrap around should not happen.
   RTC_DCHECK(session_version_ + 1 > session_version_);
+  recordreplay::Assert("WebRtcSessionDescriptionFactory::InternalCreateOffer %s",
+                       session_id_.c_str());
   auto offer = SessionDescriptionInterface::Create(
       SdpType::kOffer, std::move(desc), session_id_,
       absl::StrCat(session_version_++), {},

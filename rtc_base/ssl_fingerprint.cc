@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "rtc_base/record_replay.h"
 #include "rtc_base/ssl_fingerprint.h"
 
 #include <cctype>
@@ -109,7 +110,10 @@ std::unique_ptr<SSLFingerprint> SSLFingerprint::CreateFromCertificate(
 
 SSLFingerprint::SSLFingerprint(absl::string_view algorithm,
                                std::span<const uint8_t> digest_view)
-    : algorithm(algorithm), digest(digest_view) {}
+    : algorithm(algorithm), digest(digest_view) {
+  recordreplay::AssertBytes("SSLFingerprint", digest_view.data(),
+                            digest_view.size());
+}
 
 bool SSLFingerprint::operator==(const SSLFingerprint& other) const {
   return algorithm == other.algorithm && digest == other.digest;

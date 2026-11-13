@@ -68,6 +68,7 @@
 #include "rtc_base/containers/flat_map.h"
 #include "rtc_base/copy_on_write_buffer.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/record_replay.h"
 #include "rtc_base/rtc_certificate.h"
 #include "rtc_base/ssl_certificate.h"
 #include "rtc_base/ssl_stream_adapter.h"
@@ -1442,6 +1443,8 @@ void JsepTransportController::OnTransportGatheringState_n(
 void JsepTransportController::OnTransportCandidateGathered_n(
     IceTransportInternal* transport,
     const Candidate& candidate) {
+  recordreplay::Assert("JsepTransportController::OnTransportCandidateGathered Start");
+
   // We should never signal peer-reflexive candidates.
   if (candidate.is_prflx()) {
     RTC_DCHECK_NOTREACHED();
@@ -1450,6 +1453,8 @@ void JsepTransportController::OnTransportCandidateGathered_n(
 
   config_.signal_ice_candidates_gathered(transport->transport_name(),
                                          std::vector<Candidate>{candidate});
+  recordreplay::Assert(
+      "JsepTransportController::OnTransportCandidateGathered Done");
 }
 
 void JsepTransportController::OnTransportCandidateError_n(

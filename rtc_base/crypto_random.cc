@@ -22,7 +22,14 @@
 #include "absl/strings/string_view.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/record_replay.h"
 #include "rtc_base/synchronization/mutex.h"
+
+#if defined(WEBRTC_LINUX)
+#include <sys/random.h>
+#elif defined(WEBRTC_MAC)
+#include <stdlib.h>
+#endif
 
 // Protect against max macro inclusion.
 #undef max
@@ -37,6 +44,16 @@ class SecureRandomGenerator : public RandomGenerator {
   SecureRandomGenerator() = default;
   ~SecureRandomGenerator() override = default;
   bool Generate(void* buf, size_t len) override {
+    // Avoid calling RAND_bytes when recording/replaying as it can behave in
+    // non-deterministic ways. From Replay's WebRTC for Chromium 108.
+    if (recordreplay::IsRecordingOrReplaying(nullptr, nullptr)) {
+#if defined(WEBRTC_LINUX)
+      return getrandom(buf, len, 0) == static_cast<ssize_t>(len);
+#elif defined(WEBRTC_MAC)
+      arc4random_buf(buf, len);
+      return true;
+#endif
+    }
     return (RAND_bytes(reinterpret_cast<unsigned char*>(buf), len) > 0);
   }
 };
